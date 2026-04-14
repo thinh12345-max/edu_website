@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
 const Post = require("./models/post");
+require("dotenv").config();
 
 const app = express();
 
@@ -12,8 +13,9 @@ app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
 // ================= DB =================
-mongoose.connect("mongodb://127.0.0.1:27017/edu");
-
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => console.log("✅ KẾT NỐI MONGODB THÀNH CÔNG"))
+  .catch(err => console.log("❌ LỖI DB:", err));
 // ================= UPLOAD =================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
