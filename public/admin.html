@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+  <body>
+    <h1>Admin đăng bài</h1>
+
+    <form id="form" enctype="multipart/form-data">
+      <input name="title" placeholder="Tiêu đề" required /><br /><br />
+      <textarea name="description" placeholder="Nội dung"></textarea
+      ><br /><br />
+
+      <input type="file" name="video" /><br />
+      <input
+        type="text"
+        name="videoLink"
+        placeholder="Hoặc link YouTube"
+      /><br /><br />
+
+      <label>Chọn tài liệu (PDF / Word):</label><br />
+      <input type="file" name="document" accept=".pdf,.doc,.docx" /><br /><br />
+
+      <button>Đăng</button>
+    </form>
+
+    <hr />
+    <h2>Quản lý bài</h2>
+    <div id="list"></div>
+
+    <script>
+      const form = document.getElementById("form");
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+
+        await fetch("/api/posts", {
+          method: "POST",
+          body: fd,
+        });
+
+        alert("Đăng xong!");
+        window.location.reload();
+        load();
+      };
+
+      async function load() {
+        const res = await fetch("/api/posts?timestamp=" + Date.now());
+        const data = await res.json();
+
+        const div = document.getElementById("list");
+        div.innerHTML = "";
+
+        data.forEach((p) => {
+          div.innerHTML += `
+      <div>
+        <b>${p.title}</b>
+        <button onclick="del('${p._id}')">Xóa</button>
+        <button onclick="edit('${p._id}','${p.title}')">Sửa</button>
+      </div>
+    `;
+        });
+      }
+
+      async function del(id) {
+        await fetch("/api/posts/" + id, { method: "DELETE" });
+        load();
+      }
+
+      function edit(id, oldTitle) {
+        const title = prompt("Tên mới:", oldTitle);
+        fetch("/api/posts/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        }).then(load);
+      }
+
+      load();
+    </script>
+  </body>
+</html>
