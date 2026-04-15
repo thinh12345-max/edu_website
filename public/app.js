@@ -1,0 +1,36 @@
+const API = "/api";
+
+// 📚 load sách
+fetch(API + "/books")
+  .then(res => res.json())
+  .then(data => {
+    const container = document.getElementById("books");
+
+    data.forEach(book => {
+      container.innerHTML += `
+        <div class="card">
+          <img src="https://cdn-icons-png.flaticon.com/512/29/29302.png"/>
+          <h3>${book.title}</h3>
+          <a class="btn" href="book.html?pdf=${book.pdfUrl}">Đọc 📖</a>
+        </div>
+      `;
+    });
+  });
+
+// 🎥 load video
+fetch(API + "/videos")
+  .then(res => res.json())
+  .then(data => {
+    const container = document.getElementById("videos");
+
+    data.forEach(video => {
+      container.innerHTML += `
+        <div class="card">
+          <video width="150" controls>
+            <source src="${video.videoUrl}" type="video/mp4">
+          </video>
+          <h3>${video.title}</h3>
+        </div>
+      `;
+    });
+  });

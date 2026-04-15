@@ -1,80 +1,174 @@
-<!doctype html>
-<html>
-  <body>
-    <h1>Admin đăng bài</h1>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Thư viện</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      text-align: center;
+    }
 
-    <form id="form" enctype="multipart/form-data">
-      <input name="title" placeholder="Tiêu đề" required /><br /><br />
-      <textarea name="description" placeholder="Nội dung"></textarea
-      ><br /><br />
+    h1 {
+      color: #ff6b6b;
+    }
 
-      <input type="file" name="video" /><br />
-      <input
-        type="text"
-        name="videoLink"
-        placeholder="Hoặc link YouTube"
-      /><br /><br />
+    form {
+      background: white;
+      padding: 15px;
+      margin: 15px auto;
+      width: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
 
-      <label>Chọn tài liệu (PDF / Word):</label><br />
-      <input type="file" name="document" accept=".pdf,.doc,.docx" /><br /><br />
+    input {
+      width: 90%;
+      padding: 8px;
+      margin: 5px;
+    }
 
-      <button>Đăng</button>
-    </form>
+    button {
+      padding: 8px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
 
-    <hr />
-    <h2>Quản lý bài</h2>
-    <div id="list"></div>
+    .list {
+      margin-top: 20px;
+    }
 
-    <script>
-      const form = document.getElementById("form");
+    .item {
+      background: white;
+      margin: 10px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
 
-      form.onsubmit = async (e) => {
-        e.preventDefault();
-        const fd = new FormData(form);
+<body>
 
-        await fetch("/api/posts", {
-          method: "POST",
-          body: fd,
-        });
+<h1>🔧 Admin quản lý nội dung</h1>
 
-        alert("Đăng xong!");
-        window.location.reload();
-        load();
-      };
+<!-- 📚 Thêm sách -->
+<form id="bookForm" enctype="multipart/form-data">
+  <h3>Thêm sách</h3>
+  <input type="text" id="bookTitle" placeholder="Tên sách" required>
+  <input type="file" id="bookFile" accept="application/pdf" required>
+  <button>Upload sách</button>
+</form>
 
-      async function load() {
-        const res = await fetch("/api/posts?timestamp=" + Date.now());
-        const data = await res.json();
+<!-- 🎥 Thêm video -->
+<form id="videoForm" enctype="multipart/form-data">
+  <h3>Thêm video</h3>
+  <input type="text" id="videoTitle" placeholder="Tên video" required>
+  <input type="file" id="videoFile" accept="video/*" required>
+  <button>Upload video</button>
+</form>
 
-        const div = document.getElementById("list");
-        div.innerHTML = "";
+<!-- 📋 Danh sách -->
+<div class="list">
+  <h2>Danh sách sách</h2>
+  <div id="bookList"></div>
 
-        data.forEach((p) => {
-          div.innerHTML += `
-      <div>
-        <b>${p.title}</b>
-        <button onclick="del('${p._id}')">Xóa</button>
-        <button onclick="edit('${p._id}','${p.title}')">Sửa</button>
+  <h2>Danh sách video</h2>
+  <div id="videoList"></div>
+</div>
+
+<script>
+const API = "http://localhost:3000/api";
+
+/// 📚 Thêm sách
+// upload sách
+document.getElementById("bookForm").onsubmit = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("title", bookTitle.value);
+  formData.append("pdf", bookFile.files[0]);
+
+  await fetch("/api/books", {
+    method: "POST",
+    body: formData
+  });
+
+  alert("Upload sách thành công!");
+  loadBooks();
+};
+
+// upload video
+document.getElementById("videoForm").onsubmit = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("title", videoTitle.value);
+  formData.append("video", videoFile.files[0]);
+
+  await fetch("/api/videos", {
+    method: "POST",
+    body: formData
+  });
+
+  alert("Upload video thành công!");
+  loadVideos();
+};
+
+/// 📚 Load sách
+async function loadBooks() {
+  const res = await fetch(API + "/books");
+  const data = await res.json();
+
+  const list = document.getElementById("bookList");
+  list.innerHTML = "";
+
+  data.forEach(b => {
+    list.innerHTML += `
+      <div class="item">
+        ${b.title}
+        <button onclick="deleteBook('${b._id}')">Xóa</button>
       </div>
     `;
-        });
-      }
+  });
+}
 
-      async function del(id) {
-        await fetch("/api/posts/" + id, { method: "DELETE" });
-        load();
-      }
+/// ❌ Xóa sách
+async function deleteBook(id) {
+  await fetch(API + "/books/" + id, { method: "DELETE" });
+  loadBooks();
+}
 
-      function edit(id, oldTitle) {
-        const title = prompt("Tên mới:", oldTitle);
-        fetch("/api/posts/" + id, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title }),
-        }).then(load);
-      }
+/// 🎥 Load video
+async function loadVideos() {
+  const res = await fetch(API + "/videos");
+  const data = await res.json();
 
-      load();
-    </script>
-  </body>
+  const list = document.getElementById("videoList");
+  list.innerHTML = "";
+
+  data.forEach(v => {
+    list.innerHTML += `
+      <div class="item">
+        ${v.title}
+        <button onclick="deleteVideo('${v._id}')">Xóa</button>
+      </div>
+    `;
+  });
+}
+
+/// ❌ Xóa video
+async function deleteVideo(id) {
+  await fetch(API + "/videos/" + id, { method: "DELETE" });
+  loadVideos();
+}
+
+/// load ban đầu
+loadBooks();
+loadVideos();
+</script>
+
+</body>
 </html>
