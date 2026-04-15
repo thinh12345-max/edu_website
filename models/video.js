@@ -1,8 +1,8 @@
+// models/book.js
 const mongoose = require("mongoose");
-
 const VideoSchema = new mongoose.Schema({
   title: String,
-  videoUrl: String,
+  pdfUrl: String,
+  cloudinaryId: String, // Thêm dòng này
 });
-
-module.exports = mongoose.model("Video", VideoSchema);
+module.exports = mongoose.model("video", VideoSchema);

@@ -1,133 +1,82 @@
 const express = require("express");
 const router = express.Router();
-
-const Book = require("../models/book");
-const Video = require("../models/video");
-
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
+const Book = require("../models/book");
+const Video = require("../models/video");
 
-
-// =========================
-// CLOUDINARY STORAGE - BOOK (PDF)
-// =========================
-const bookStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "edu/books",
-    resource_type: "raw", // PDF / file
+// Cấu hình lưu trữ linh hoạt
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    const isPdf = file.mimetype === 'application/pdf';
+    return {
+      folder: isPdf ? "edu/books" : "edu/videos",
+      resource_type: isPdf ? "raw" : "video", // PDF bắt buộc là raw
+      public_id: Date.now() + "-" + file.originalname.split('.')[0],
+    };
   },
 });
 
-const uploadBook = multer({ storage: bookStorage });
+const upload = multer({ storage });
 
-
-// =========================
-// CLOUDINARY STORAGE - VIDEO
-// =========================
-const videoStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "edu/videos",
-    resource_type: "video",
-  },
-});
-
-const uploadVideo = multer({ storage: videoStorage });
-
-
-// =========================
-// 📘 UPLOAD BOOK (FIXED)
-// =========================
-router.post("/books", uploadBook.single("pdf"), async (req, res) => {
+// 📘 UPLOAD BOOK
+router.post("/books", upload.single("pdf"), async (req, res) => {
   try {
-    console.log("FILE:", req.file); // 🔥 debug
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "File PDF không được gửi lên"
-      });
-    }
-
+    if (!req.file) throw new Error("Không tìm thấy file PDF");
     const book = new Book({
       title: req.body.title,
       pdfUrl: req.file.path,
+      cloudinaryId: req.file.filename // Lưu ID để xóa sau này
     });
-
     await book.save();
-
     res.json(book);
-
   } catch (err) {
-    console.error("UPLOAD ERROR:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// =========================
-// 🎬 UPLOAD VIDEO (FIXED)
-// =========================
-router.post("/videos", uploadVideo.single("video"), async (req, res) => {
+// 🎬 UPLOAD VIDEO
+router.post("/videos", upload.single("video"), async (req, res) => {
   try {
+    if (!req.file) throw new Error("Không tìm thấy file video");
     const video = new Video({
       title: req.body.title,
-      videoUrl: req.file.path, // ✅ Cloudinary URL
+      videoUrl: req.file.path,
+      cloudinaryId: req.file.filename
     });
-
     await video.save();
-
-    res.json({
-      success: true,
-      data: video,
-    });
+    res.json(video);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// 🗑 DELETE BOOK (Xóa cả trên Cloudinary)
+router.delete("/books/:id", async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (book && book.cloudinaryId) {
+      // Vì PDF là 'raw', cần thêm resource_type khi xóa
+      await cloudinary.uploader.destroy(book.cloudinaryId, { resource_type: 'raw' });
+    }
+    await Book.findByIdAndDelete(req.params.id);
+    res.json({ message: "Đã xóa sách khỏi hệ thống và Cloud" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-// =========================
-// 📥 GET BOOKS
-// =========================
+// 📥 GET ALL (Giữ nguyên logic cũ nhưng thêm bọc try-catch)
 router.get("/books", async (req, res) => {
   const books = await Book.find();
   res.json(books);
 });
 
-
-// =========================
-// 📥 GET VIDEOS
-// =========================
 router.get("/videos", async (req, res) => {
   const videos = await Video.find();
   res.json(videos);
 });
-
-
-// =========================
-// 🗑 DELETE BOOK
-// =========================
-router.delete("/books/:id", async (req, res) => {
-  await Book.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted book" });
-});
-
-
-// =========================
-// 🗑 DELETE VIDEO
-// =========================
-router.delete("/videos/:id", async (req, res) => {
-  await Video.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted video" });
-});
-
 
 module.exports = router;

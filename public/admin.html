@@ -4,49 +4,16 @@
   <meta charset="UTF-8">
   <title>Admin - Thư viện</title>
   <style>
-    body {
-      font-family: Arial;
-      background: #f5f5f5;
-      text-align: center;
-    }
-
-    h1 {
-      color: #ff6b6b;
-    }
-
-    form {
-      background: white;
-      padding: 15px;
-      margin: 15px auto;
-      width: 300px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #ccc;
-    }
-
-    input {
-      width: 90%;
-      padding: 8px;
-      margin: 5px;
-    }
-
-    button {
-      padding: 8px 15px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-
-    .list {
-      margin-top: 20px;
-    }
-
-    .item {
-      background: white;
-      margin: 10px;
-      padding: 10px;
-      border-radius: 10px;
-    }
+    /* ... Giữ nguyên CSS cũ của bạn ... */
+    body { font-family: Arial; background: #f5f5f5; text-align: center; }
+    h1 { color: #ff6b6b; }
+    form { background: white; padding: 15px; margin: 15px auto; width: 300px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+    input { width: 90%; padding: 8px; margin: 5px; }
+    button { padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { opacity: 0.8; }
+    .list { margin-top: 20px; }
+    .item { background: white; margin: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: 50%; margin: 10px auto; }
+    .btn-delete { background: #ff4757; }
   </style>
 </head>
 
@@ -54,23 +21,20 @@
 
 <h1>🔧 Admin quản lý nội dung</h1>
 
-<!-- 📚 Thêm sách -->
-<form id="bookForm" enctype="multipart/form-data">
+<form id="bookForm">
   <h3>Thêm sách</h3>
   <input type="text" id="bookTitle" placeholder="Tên sách" required>
   <input type="file" id="bookFile" accept="application/pdf" required>
-  <button>Upload sách</button>
+  <button type="submit" id="btnBook">Upload sách</button>
 </form>
 
-<!-- 🎥 Thêm video -->
-<form id="videoForm" enctype="multipart/form-data">
+<form id="videoForm">
   <h3>Thêm video</h3>
   <input type="text" id="videoTitle" placeholder="Tên video" required>
   <input type="file" id="videoFile" accept="video/*" required>
-  <button>Upload video</button>
+  <button type="submit" id="btnVideo">Upload video</button>
 </form>
 
-<!-- 📋 Danh sách -->
 <div class="list">
   <h2>Danh sách sách</h2>
   <div id="bookList"></div>
@@ -82,95 +46,101 @@
 <script>
 const API = "/api";
 
-/// 📚 Thêm sách
-// upload sách
+// --- XỬ LÝ SÁCH ---
 document.getElementById("bookForm").onsubmit = async (e) => {
   e.preventDefault();
-
-  const title = document.getElementById("bookTitle").value;
-  const file = document.getElementById("bookFile").files[0];
+  const btn = document.getElementById("btnBook");
+  
+  // Lấy giá trị chính xác và gán tên biến tường minh
+  const bookTitleValue = document.getElementById("bookTitle").value;
+  const bookFileFile = document.getElementById("bookFile").files[0];
 
   const formData = new FormData();
-  formData.append("title", title);
-  formData.append("pdf", file);
+  formData.append("title", bookTitleValue);
+  formData.append("pdf", bookFileFile);
 
-  await fetch("/api/books", {
-    method: "POST",
-    body: formData
-  });
+  btn.innerText = "Đang tải lên...";
+  btn.disabled = true;
 
-  alert("Upload sách thành công!");
-  loadBooks();
+  try {
+    const res = await fetch(`${API}/books`, { method: "POST", body: formData });
+    if (res.ok) {
+      alert(`Upload sách "${bookTitleValue}" thành công!`);
+      document.getElementById("bookForm").reset();
+      loadBooks();
+    }
+  } catch (err) {
+    alert("Lỗi upload sách!");
+  } finally {
+    btn.innerText = "Upload sách";
+    btn.disabled = false;
+  }
 };
 
-// upload video
+// --- XỬ LÝ VIDEO ---
 document.getElementById("videoForm").onsubmit = async (e) => {
   e.preventDefault();
+  const btn = document.getElementById("btnVideo");
 
-  const title = document.getElementById("videoTitle").value;
-  const file = document.getElementById("videoFile").files[0];
+  // Tên biến được đặt riêng biệt để tránh ReferenceError
+  const videoTitleValue = document.getElementById("videoTitle").value;
+  const videoFileFile = document.getElementById("videoFile").files[0];
 
   const formData = new FormData();
-  formData.append("title", title);
-  formData.append("video", file);
+  formData.append("title", videoTitleValue);
+  formData.append("video", videoFileFile);
 
-  await fetch("/api/videos", {
-    method: "POST",
-    body: formData
-  });
+  btn.innerText = "Đang tải lên...";
+  btn.disabled = true;
 
-  alert("Upload video thành công!");
-  loadVideos();
+  try {
+    const res = await fetch(`${API}/videos`, { method: "POST", body: formData });
+    if (res.ok) {
+      alert(`Upload video "${videoTitleValue}" thành công!`);
+      document.getElementById("videoForm").reset();
+      loadVideos();
+    }
+  } catch (err) {
+    alert("Lỗi upload video!");
+  } finally {
+    btn.innerText = "Upload video";
+    btn.disabled = false;
+  }
 };
-/// 📚 Load sách
+
+// --- LOAD DỮ LIỆU ---
 async function loadBooks() {
   const res = await fetch(API + "/books");
   const data = await res.json();
-
   const list = document.getElementById("bookList");
-  list.innerHTML = "";
-
-  data.forEach(b => {
-    list.innerHTML += `
-      <div class="item">
-        ${b.title}
-        <button onclick="deleteBook('${b._id}')">Xóa</button>
-      </div>
-    `;
-  });
+  list.innerHTML = data.map(b => `
+    <div class="item">
+      <span>${b.title}</span>
+      <button class="btn-delete" onclick="deleteItem('books', '${b._id}')">Xóa</button>
+    </div>
+  `).join('');
 }
 
-/// ❌ Xóa sách
-async function deleteBook(id) {
-  await fetch(API + "/books/" + id, { method: "DELETE" });
-  loadBooks();
-}
-
-/// 🎥 Load video
 async function loadVideos() {
   const res = await fetch(API + "/videos");
   const data = await res.json();
-
   const list = document.getElementById("videoList");
-  list.innerHTML = "";
-
-  data.forEach(v => {
-    list.innerHTML += `
-      <div class="item">
-        ${v.title}
-        <button onclick="deleteVideo('${v._id}')">Xóa</button>
-      </div>
-    `;
-  });
+  list.innerHTML = data.map(v => `
+    <div class="item">
+      <span>${v.title}</span>
+      <button class="btn-delete" onclick="deleteItem('videos', '${v._id}')">Xóa</button>
+    </div>
+  `).join('');
 }
 
-/// ❌ Xóa video
-async function deleteVideo(id) {
-  await fetch(API + "/videos/" + id, { method: "DELETE" });
-  loadVideos();
+// Hàm xóa chung cho gọn code
+async function deleteItem(type, id) {
+  if(confirm("Bạn có chắc chắn muốn xóa?")) {
+    await fetch(`${API}/${type}/${id}`, { method: "DELETE" });
+    type === 'books' ? loadBooks() : loadVideos();
+  }
 }
 
-/// load ban đầu
 loadBooks();
 loadVideos();
 </script>
