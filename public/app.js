@@ -2,28 +2,30 @@ const API = "/api";
 
 // 📚 load sách
 fetch(API + "/books")
-  .then(res => res.json())
-  .then(data => {
+  .then((res) => res.json())
+  .then((data) => {
     const container = document.getElementById("books");
 
-    data.forEach(book => {
+    data.forEach((book) => {
       container.innerHTML += `
         <div class="card">
           <img src="https://cdn-icons-png.flaticon.com/512/29/29302.png"/>
           <h3>${book.title}</h3>
-          <a class="btn" href="book.html?pdf=${book.pdfUrl}">Đọc 📖</a>
-        </div>
+<a class="btn" href="book.html?pdf=${encodeURIComponent(book.pdfUrl)}">
+  Đọc 📖
+</a>       
+ </div>
       `;
     });
   });
 
 // 🎥 load video
 fetch(API + "/videos")
-  .then(res => res.json())
-  .then(data => {
+  .then((res) => res.json())
+  .then((data) => {
     const container = document.getElementById("videos");
 
-    data.forEach(video => {
+    data.forEach((video) => {
       container.innerHTML += `
         <div class="card">
           <video width="150" controls>
