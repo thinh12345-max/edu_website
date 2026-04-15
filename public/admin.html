@@ -88,8 +88,8 @@ document.getElementById("bookForm").onsubmit = async (e) => {
   e.preventDefault();
 
   const formData = new FormData();
-  formData.append("title", bookTitle.value);
-  formData.append("pdf", bookFile.files[0]);
+  formData.append("title", title);
+  formData.append("pdf", title);
 
   await fetch("/api/books", {
     method: "POST",

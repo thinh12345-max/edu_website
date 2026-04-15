@@ -42,25 +42,29 @@ const uploadVideo = multer({ storage: videoStorage });
 // =========================
 router.post("/books", uploadBook.single("pdf"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded"
+      });
+    }
+
     const book = new Book({
       title: req.body.title,
-      pdfUrl: req.file.path, // ✅ Cloudinary URL
+      pdfUrl: req.file.path,
     });
 
     await book.save();
 
-    res.json({
-      success: true,
-      data: book,
-    });
+    res.json(book);
   } catch (err) {
+    console.error(err); // QUAN TRỌNG
     res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 });
-
 
 // =========================
 // 🎬 UPLOAD VIDEO (FIXED)
