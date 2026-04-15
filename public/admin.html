@@ -87,9 +87,12 @@ const API = "/api";
 document.getElementById("bookForm").onsubmit = async (e) => {
   e.preventDefault();
 
+  const title = document.getElementById("bookTitle").value;
+  const file = document.getElementById("bookFile").files[0];
+
   const formData = new FormData();
   formData.append("title", title);
-  formData.append("pdf", title);
+  formData.append("pdf", file);
 
   await fetch("/api/books", {
     method: "POST",
@@ -104,9 +107,12 @@ document.getElementById("bookForm").onsubmit = async (e) => {
 document.getElementById("videoForm").onsubmit = async (e) => {
   e.preventDefault();
 
+  const title = document.getElementById("videoTitle").value;
+  const file = document.getElementById("videoFile").files[0];
+
   const formData = new FormData();
-  formData.append("title", videoTitle.value);
-  formData.append("video", videoFile.files[0]);
+  formData.append("title", title);
+  formData.append("video", file);
 
   await fetch("/api/videos", {
     method: "POST",
@@ -116,7 +122,6 @@ document.getElementById("videoForm").onsubmit = async (e) => {
   alert("Upload video thành công!");
   loadVideos();
 };
-
 /// 📚 Load sách
 async function loadBooks() {
   const res = await fetch(API + "/books");

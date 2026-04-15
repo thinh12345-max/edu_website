@@ -1,20 +1,19 @@
 const API = "/api";
 
 // 📚 load sách
-fetch(API + "/books")
-  .then((res) => res.json())
-  .then((data) => {
+fetch("/api/books")
+  .then(res => res.json())
+  .then(data => {
     const container = document.getElementById("books");
 
-    data.forEach((book) => {
+    data.forEach(book => {
       container.innerHTML += `
         <div class="card">
-          <img src="https://cdn-icons-png.flaticon.com/512/29/29302.png"/>
           <h3>${book.title}</h3>
-<a class="btn" href="book.html?pdf=${encodeURIComponent(book.pdfUrl)}">
-  Đọc 📖
-</a>       
- </div>
+          <a href="book.html?pdf=${encodeURIComponent(book.pdfUrl)}">
+            Đọc 📖
+          </a>
+        </div>
       `;
     });
   });

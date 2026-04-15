@@ -42,10 +42,12 @@ const uploadVideo = multer({ storage: videoStorage });
 // =========================
 router.post("/books", uploadBook.single("pdf"), async (req, res) => {
   try {
+    console.log("FILE:", req.file); // 🔥 debug
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "No file uploaded"
+        message: "File PDF không được gửi lên"
       });
     }
 
@@ -57,8 +59,9 @@ router.post("/books", uploadBook.single("pdf"), async (req, res) => {
     await book.save();
 
     res.json(book);
+
   } catch (err) {
-    console.error(err); // QUAN TRỌNG
+    console.error("UPLOAD ERROR:", err);
     res.status(500).json({
       success: false,
       message: err.message,
